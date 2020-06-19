@@ -1,34 +1,34 @@
 import { Test } from '@nestjs/testing';
-import { JsonService } from './json.service';
+import { FileService } from './file.service';
 import { vol } from 'memfs';
 
 // eslint-disable-next-line global-require
 jest.mock('fs', () => require('memfs'));
 
-describe('JsonService', () => {
-  let jsonService: JsonService;
+describe('FileService', () => {
+  let fileService: FileService;
 
   beforeEach(async () => {
     vol.reset();
 
     const moduleRef = await Test.createTestingModule({
-      providers: [JsonService],
+      providers: [FileService],
     }).compile();
 
-    jsonService = await moduleRef.get<JsonService>(JsonService);
+    fileService = await moduleRef.get<FileService>(FileService);
   });
 
   describe('get', () => {
     describe('gets a single json file from storage', () => {
       test('gets a json object', async () => {
-        const mockFile = { title: 'foo', bar: { baz: 'test' } };
+        const mockFile = JSON.stringify({ title: 'foo', bar: { baz: 'test' } });
         vol.fromJSON(
           {
-            './documents.json': JSON.stringify(mockFile),
+            './documents.json': mockFile,
           },
           '/content',
         );
-        const file = await jsonService.get('/content/documents.json');
+        const file = await fileService.readFile('/content/documents.json');
         expect(file).toEqual(mockFile);
       });
 

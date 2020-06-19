@@ -2,6 +2,7 @@ import { resolve } from 'path';
 
 export default () => ({
   isProduction: process.env.NODE_ENV === 'production',
-  pagesPath: resolve(process.cwd(), 'content', 'pages'),
-  staticPath: resolve(process.cwd(), 'static'),
+  staticPath: resolve(process.cwd(), 'data', 'static'),
+  contentPath: resolve(process.cwd(), 'data', 'content'),
+  blueprintsPath: resolve(process.cwd(), 'data', 'blueprints'),
 });
