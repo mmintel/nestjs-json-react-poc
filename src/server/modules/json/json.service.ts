@@ -1,6 +1,7 @@
+import { isObject } from '../../utils/is-object';
 import { extname } from 'path';
 import { Injectable, Logger } from '@nestjs/common';
-import { FileService } from '../file';
+import { FileService, FileMeta } from '../file';
 
 export type AnyJson = boolean | number | string | null | JsonArray | Json;
 export type JsonArray = Array<AnyJson>;
@@ -16,18 +17,23 @@ export class JsonService {
     private fileService: FileService,
   ) {}
 
-  public async get(path: string): Promise<Json | null> {
+  public async readFile(path: string): Promise<Json | null> {
     const jsonPath = this.ensureJson(path);
-    return this.readJson(jsonPath);
+    return this.readAsJson(jsonPath);
   }
 
-  public static async traverse(json: Json, callback: (json: Json, key: string, value: AnyJson) => Promise<Json>): Promise<Json> {
+  public async readMeta(path: string): Promise<FileMeta | null> {
+    const jsonPath = this.ensureJson(path);
+    return this.fileService.readMeta(jsonPath);
+  }
+
+  public async traverse(json: Json, callback: (json: Json, key: string, value: AnyJson) => Promise<Json>): Promise<Json> {
     let newJson = {...json};
 
     for (const [key, value] of Object.entries(json)) {
       // call recursively if there is another object
-      if (JsonService.isObject(value)) {
-        json[key] = await JsonService.traverse(value as Json, callback);
+      if (isObject(value)) {
+        json[key] = await this.traverse(value as Json, callback);
       }
 
       newJson = await callback(json, key, value);
@@ -36,15 +42,11 @@ export class JsonService {
     return newJson;
   }
 
-  private async readJson(path: string): Promise<Json | null> {
+  private async readAsJson(path: string): Promise<Json | null> {
     const data = await this.fileService.readFile(path);
     if (!data) return null;
     const json = JSON.parse(data);
     return json;
-  }
-
-  private static isObject(value: AnyJson) {
-    return value === Object(value);
   }
 
   // async list(path: string, recursive = false): Promise<Array<string>> {

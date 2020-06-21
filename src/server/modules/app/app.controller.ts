@@ -8,19 +8,21 @@ import {
   Res,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { resolve } from 'path';
+import { join, resolve } from 'path';
 import { RecordService } from '../record';
 import { ConfigService } from '@nestjs/config';
 
 @Controller()
 export class AppController {
   private staticPath: string;
+  private pagesDir: string;
 
   constructor(
     private recordService: RecordService,
     private configService: ConfigService,
   ) {
     this.staticPath = this.configService.get<string>('staticPath') || '';
+    this.pagesDir = this.configService.get<string>('pagesDir') || '';
   }
 
   @Get(':filename.:ext')
@@ -36,13 +38,13 @@ export class AppController {
   @Render('page.tsx')
   @UseFilters(HttpExceptionFilter)
   public async showHomePage() {
-    return this.recordService.get('index');
+    return this.recordService.get(join(this.pagesDir, 'index'));
   }
 
   @Get(':slug*')
   @Render('page.tsx')
   @UseFilters(HttpExceptionFilter)
   public async showPageBySlug(@Param('slug') slug: string) {
-    return this.recordService.get(slug);
+    return this.recordService.get(join(this.pagesDir, slug));
   }
 }

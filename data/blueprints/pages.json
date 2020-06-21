@@ -1,6 +1,6 @@
 {
   "title": {
-    "type": "string"
+    "type": "text"
   },
   "about": {
     "type": "relation"

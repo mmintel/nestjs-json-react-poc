@@ -2,7 +2,7 @@ import * as fs from 'fs-extra';
 // import fg from 'fast-glob';
 import { Injectable, Logger } from '@nestjs/common';
 
-interface FileMeta {
+export interface FileMeta {
   createdAt: Date,
   updatedAt: Date,
   dir: boolean,
