@@ -32,7 +32,7 @@ export class JsonService {
       const data = await this.storage.getOne(id);
       return this.parse(data);
     } catch {
-      throw new JsonNotFoundError('')
+      throw new JsonNotFoundError('Could not receive json data.')
     }
   }
 
