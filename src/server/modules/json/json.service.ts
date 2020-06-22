@@ -1,4 +1,3 @@
-import { isObject } from '../../utils/is-object';
 import { extname } from 'path';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Storage } from '../../storage';
@@ -7,12 +6,6 @@ export type AnyJson = boolean | number | string | null | JsonArray | Json;
 export type JsonArray = Array<AnyJson>;
 export interface Json {
   [key: string]: AnyJson;
-}
-
-interface TraverseContext {
-  json: Json,
-  key: string,
-  value: AnyJson
 }
 
 export class JsonNotFoundError extends Error {}
@@ -25,30 +18,20 @@ export class JsonService {
     @Inject('Storage') private storage: Storage,
   ) {}
 
-  public async getOne(path: string): Promise<Json> {
+  public async load(path: string): Promise<Json> {
     const id = this.buildIdentifier(path);
+
+    this.logger.verbose(`Loading JSON at ${id}...`);
 
     try {
       const data = await this.storage.getOne(id);
+
+      this.logger.verbose(`Received json at ${path}!`)
+
       return this.parse(data);
     } catch {
-      throw new JsonNotFoundError('Could not receive json data.')
+      throw new JsonNotFoundError(`Could not receive json data at "${id}".`)
     }
-  }
-
-  public async traverse(json: Json, callback: (context: TraverseContext) => Promise<Json>): Promise<Json> {
-    let newJson = {...json};
-
-    for (const [key, value] of Object.entries(json)) {
-      // call recursively if there is another object
-      if (isObject(value)) {
-        json[key] = await this.traverse(value as Json, callback);
-      }
-
-      newJson = await callback({ json, key, value });
-    }
-
-    return newJson;
   }
 
   private parse(data: string): Json {

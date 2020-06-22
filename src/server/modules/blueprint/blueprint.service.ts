@@ -1,21 +1,11 @@
 import { ConfigService } from '@nestjs/config';
-import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { JsonService, Json } from '../json';
 import { resolve } from 'path';
 
-export interface Blueprint {
-  meta: BlueprintMeta,
-  data: BlueprintData
-}
+export type Blueprint = Json
 
-export interface BlueprintMeta {
-  createdAt: Date,
-  updatedAt: Date,
-}
-
-export type BlueprintData = Json
-
-export const BLUEPRINT_NOT_FOUND_EXCEPTION = 'Blueprint was not found.';
+export class BlueprintNotFoundException extends Error {}
 
 @Injectable()
 export class BlueprintService {
@@ -31,48 +21,17 @@ export class BlueprintService {
 
   public async get(path: string): Promise<Blueprint> {
     const blueprintsPath = resolve(this.blueprintsPath, path);
-    const data = await this.getData(blueprintsPath);
-    const meta = await this.getMeta(blueprintsPath);
 
-    return {
-      data,
-      meta,
-    };
+    this.logger.verbose(`Loading blueprint at "${path}"...`);
+
+    return this.loadData(blueprintsPath);
   }
 
-  private async getMeta(path: string): Promise<BlueprintMeta> {
-    const stats = await this.jsonService.readMeta(path);
-
-    if (!stats) {
-      throw new HttpException(
-        {
-          status: HttpStatus.NOT_FOUND,
-          error: BLUEPRINT_NOT_FOUND_EXCEPTION,
-        },
-        HttpStatus.NOT_FOUND,
-      );
+  private async loadData(path: string): Promise<Json> {
+    try {
+      return this.jsonService.load(path);
+    } catch {
+      throw new BlueprintNotFoundException(`Blueprint was not found at ${path}.`);
     }
-
-    return {
-      createdAt: stats.createdAt,
-      updatedAt: stats.updatedAt,
-    };
   }
-
-  private async getData(path: string): Promise<Json> {
-    const json = await this.jsonService.readFile(path);
-
-    if (!json) {
-      throw new HttpException(
-        {
-          status: HttpStatus.NOT_FOUND,
-          error: BLUEPRINT_NOT_FOUND_EXCEPTION,
-        },
-        HttpStatus.NOT_FOUND,
-      );
-    }
-
-    return json;
-  }
-
 }
