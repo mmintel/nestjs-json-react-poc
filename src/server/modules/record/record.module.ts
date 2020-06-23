@@ -2,10 +2,10 @@ import { RecordService } from './record.service';
 import { Module } from '@nestjs/common';
 import { JsonModule } from '../json';
 import { BlueprintModule } from '../blueprint';
-import { FieldModule } from '../field';
+import { RecordModelModule } from '../record-model';
 
 @Module({
-  imports: [JsonModule, BlueprintModule, FieldModule],
+  imports: [JsonModule, RecordModelModule, BlueprintModule],
   providers: [RecordService],
   exports: [RecordService]
 })

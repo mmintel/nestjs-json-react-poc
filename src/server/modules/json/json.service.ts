@@ -1,7 +1,6 @@
-import { isObject } from '../../utils/is-object';
 import { extname } from 'path';
-import { Injectable, Logger } from '@nestjs/common';
-import { FileService, FileMeta } from '../file';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Storage } from '../../storage';
 
 export type AnyJson = boolean | number | string | null | JsonArray | Json;
 export type JsonArray = Array<AnyJson>;
@@ -9,66 +8,38 @@ export interface Json {
   [key: string]: AnyJson;
 }
 
+export class JsonNotFoundError extends Error {}
+
 @Injectable()
 export class JsonService {
   private logger = new Logger('JsonService');
 
   constructor(
-    private fileService: FileService,
+    @Inject('Storage') private storage: Storage,
   ) {}
 
-  public async readFile(path: string): Promise<Json | null> {
-    const jsonPath = this.ensureJson(path);
-    return this.readAsJson(jsonPath);
-  }
+  public async load(path: string): Promise<Json> {
+    const id = this.buildIdentifier(path);
 
-  public async readMeta(path: string): Promise<FileMeta | null> {
-    const jsonPath = this.ensureJson(path);
-    return this.fileService.readMeta(jsonPath);
-  }
+    this.logger.verbose(`Loading JSON at ${id}...`);
 
-  public async traverse(json: Json, callback: (json: Json, key: string, value: AnyJson) => Promise<Json>): Promise<Json> {
-    let newJson = {...json};
+    try {
+      const data = await this.storage.getOne(id);
 
-    for (const [key, value] of Object.entries(json)) {
-      // call recursively if there is another object
-      if (isObject(value)) {
-        json[key] = await this.traverse(value as Json, callback);
-      }
+      this.logger.verbose(`Received json at ${path}!`)
 
-      newJson = await callback(json, key, value);
+      return this.parse(data);
+    } catch {
+      throw new JsonNotFoundError(`Could not receive json data at "${id}".`)
     }
-
-    return newJson;
   }
 
-  private async readAsJson(path: string): Promise<Json | null> {
-    const data = await this.fileService.readFile(path);
-    if (!data) return null;
+  private parse(data: string): Json {
     const json = JSON.parse(data);
     return json;
   }
 
-  // async list(path: string, recursive = false): Promise<Array<string>> {
-  //   this.logger.verbose(`list dir: ${path}`);
-  //   if (recursive) {
-  //     return fg(`${path}/**/*.json`);
-  //   }
-
-  //   return fg(`${path}/*.json`);
-  // }
-
-  // async readDir<T>(path: string, recursive = false): Promise<Array<T>> {
-  //   this.logger.verbose(`read dir: ${path}`);
-  //   const dir = await this.list(path, recursive);
-  //   return Promise.all(
-  //     dir.map(async (fileName: string) => {
-  //       return this.readFile<any>(fileName);
-  //     }),
-  //   );
-  // }
-
-  private ensureJson(path: string) {
+  private buildIdentifier(path: string) {
     let jsonPath = path;
     const json = '.json';
     const ext = extname(path);

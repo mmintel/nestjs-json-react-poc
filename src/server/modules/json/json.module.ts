@@ -1,10 +1,14 @@
 import { Module } from '@nestjs/common';
-import { FileModule } from '../file';
 import { JsonService } from './json.service';
-
+import { FileStorage } from '../../storage';
 @Module({
-  imports: [FileModule],
-  providers: [JsonService],
+  providers: [
+    JsonService,
+    {
+      provide: 'Storage',
+      useClass: FileStorage
+    }
+  ],
   exports: [JsonService],
 })
 export class JsonModule {}
