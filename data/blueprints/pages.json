@@ -1,6 +1,9 @@
 {
   "title": {
-    "type": "text"
+    "type": "text",
+    "min": 10,
+    "max": 12,
+    "required": true
   },
   "about": {
     "type": "relation"

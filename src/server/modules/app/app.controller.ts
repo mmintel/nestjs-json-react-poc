@@ -1,3 +1,4 @@
+import { RecordNotFoundException } from './../record/record.service';
 import { HttpExceptionFilter } from './http-exception.filter';
 import {
   Controller,
@@ -6,13 +7,15 @@ import {
   UseFilters,
   Param,
   Res,
+  InternalServerErrorException,
   HttpException,
+  UnprocessableEntityException,
   HttpStatus,
   Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { join, resolve } from 'path';
-import { RecordService, Record } from '../record';
+import { RecordService, Record, BuildRecordException } from '../record';
 import { ConfigService } from '@nestjs/config';
 
 // TODO Should not use RecordService directly.
@@ -74,14 +77,23 @@ export class AppController {
       const data = await this.recordService.get(join(this.pagesDir, path));
       this.logger.verbose(`Received data ${JSON.stringify(data)}`);
       return data;
-    } catch {
-      throw new HttpException(
-        {
-          status: HttpStatus.NOT_FOUND,
-          error: 'Requested data was not found.',
-        },
-        HttpStatus.NOT_FOUND,
-      );
+    } catch (e) {
+      switch(e.constructor) {
+        case BuildRecordException:
+          this.logger.error(e.message);
+          throw new UnprocessableEntityException(e.message);
+        case RecordNotFoundException:
+          throw new HttpException(
+            {
+              status: HttpStatus.NOT_FOUND,
+              error: 'Requested data was not found.',
+            },
+            HttpStatus.NOT_FOUND,
+          );
+        default:
+          this.logger.error(e.message);
+          throw new InternalServerErrorException('Ooops something went wrong.');
+      }
     }
   }
 }

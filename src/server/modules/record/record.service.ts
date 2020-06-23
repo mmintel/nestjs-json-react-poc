@@ -6,7 +6,12 @@ import { RecordModelService } from '../record-model';
 import { basename, dirname, resolve } from 'path';
 
 export type Record = Json
-export class RecordNotFoundException extends Error {};
+export class RecordNotFoundException extends Error {
+  name = 'RecordNotFoundException'
+};
+export class BuildRecordException extends Error {
+  name = 'BuildRecordException'
+};
 
 @Injectable()
 export class RecordService {
@@ -31,7 +36,12 @@ export class RecordService {
     const blueprintName = basename(dirname(contentPath));
     const blueprint = await this.blueprintService.get(blueprintName);
     const recordModel = this.recordModelService.get(blueprint);
-    return recordModel.buildRecord(data)
+
+    try {
+      return recordModel.buildRecord(data)
+    } catch (error) {
+      throw new BuildRecordException(error.message);
+    }
   }
 
   private async loadData(path: string): Promise<Json> {
