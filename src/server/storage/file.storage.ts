@@ -10,9 +10,11 @@ export class FileStorage implements Storage {
   private logger = new Logger('FileStorage');
 
   public async getOne(path: string): Promise<string> {
-    this.logger.verbose(`read file: ${path}`);
+    this.logger.verbose(`Reading file at ${path}...`);
     try {
-      return fs.readFile(path, 'utf-8');
+      const file = fs.readFile(path, 'utf-8');
+      this.logger.verbose(`Received file at ${path}!`)
+      return file;
     } catch (e) {
       throw new FileNotFoundException(`Could not read file: ${path}.`);
     }

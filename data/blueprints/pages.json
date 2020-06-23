@@ -1,14 +1,6 @@
 {
   "title": {
-    "type": "text"
-  },
-  "about": {
-    "type": "relation"
-  },
-  "articles": {
-    "type": "relation",
-    "multiple": true,
-    "max": 3,
-    "sort": "updated_at"
+    "type": "text",
+    "required": true
   }
 }

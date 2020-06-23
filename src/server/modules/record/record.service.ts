@@ -1,10 +1,17 @@
 import { ConfigService } from '@nestjs/config';
 import { Injectable, Logger } from '@nestjs/common';
 import { JsonService, Json } from '../json';
-import { resolve } from 'path';
+import { BlueprintService } from '../blueprint';
+import { RecordModelService } from '../record-model';
+import { basename, dirname, resolve } from 'path';
 
 export type Record = Json
-export class RecordNotFoundException extends Error {};
+export class RecordNotFoundException extends Error {
+  name = 'RecordNotFoundException'
+};
+export class BuildRecordException extends Error {
+  name = 'BuildRecordException'
+};
 
 @Injectable()
 export class RecordService {
@@ -13,6 +20,8 @@ export class RecordService {
 
   constructor(
     private jsonService: JsonService,
+    private blueprintService: BlueprintService,
+    private recordModelService: RecordModelService,
     private configService: ConfigService
   ) {
     this.contentPath = this.configService.get<string>('contentPath') || '';
@@ -20,20 +29,26 @@ export class RecordService {
 
   public async get(path: string): Promise<Record> {
     const contentPath = resolve(this.contentPath, path);
-    const data = await this.getData(contentPath);
 
-    return {
-      data,
-    };
+    this.logger.verbose(`Loading record at "${path}"...`);
+
+    const data = await this.loadData(contentPath);
+    const blueprintName = basename(dirname(contentPath));
+    const blueprint = await this.blueprintService.get(blueprintName);
+    const recordModel = this.recordModelService.get(blueprint);
+
+    try {
+      return recordModel.buildRecord(data)
+    } catch (error) {
+      throw new BuildRecordException(error.message);
+    }
   }
 
-  private async getData(path: string): Promise<Json> {
-    const json = await this.jsonService.getOne(path);
-
-    if (!json) {
+  private async loadData(path: string): Promise<Json> {
+    try {
+      return this.jsonService.load(path);
+    } catch {
       throw new RecordNotFoundException('Record was not found.');
     }
-
-    return json;
   }
 }
