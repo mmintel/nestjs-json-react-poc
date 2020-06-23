@@ -1,18 +1,7 @@
-import { ValidationResult } from './../../utils/schema';
 import { Injectable, Logger } from '@nestjs/common';
 import { Blueprint } from '../blueprint';
 import { RecordModel } from './record-model';
-
-export interface Field {
-  type: string;
-  init: (definition: FieldDefinition) => void,
-  validate: (value: any) => ValidationResult | { value: any, error: string | null }
-}
-
-export interface FieldDefinition {
-  [key: string]: any,
-  type: string
-}
+import { Field } from '../../fields';
 
 interface FieldRegistry {
   [key: string]: Field,
