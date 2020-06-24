@@ -35,7 +35,9 @@ export class RecordService {
     const data = await this.loadData(contentPath);
     const blueprintName = basename(dirname(contentPath));
     const blueprint = await this.blueprintService.get(blueprintName);
-    const recordModel = this.recordModelService.get(blueprint);
+    const recordModel = this.recordModelService.createRecordModel(blueprint);
+
+    await recordModel.init();
 
     try {
       return recordModel.buildRecord(data)

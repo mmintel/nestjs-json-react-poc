@@ -21,7 +21,7 @@ export class RecordModelService {
     return this.fields[type];
   }
 
-  public get(blueprint: Blueprint): RecordModel {
+  public createRecordModel(blueprint: Blueprint): RecordModel {
     return new RecordModel(this, blueprint)
   }
 }

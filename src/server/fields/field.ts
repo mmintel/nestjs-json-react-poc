@@ -1,9 +1,10 @@
+import { AnyJson } from '../modules/json';
 import Joi from '@hapi/joi';
 
 export interface Field {
   type: string;
   init: (definition: FieldDefinition) => void,
-  resolve: (value: any) => Joi.ValidationResult,
+  resolve: (value: AnyJson) => Promise<AnyJson>|AnyJson,
 }
 
 export interface FieldDefinition {

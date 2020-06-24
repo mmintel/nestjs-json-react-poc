@@ -1,5 +1,9 @@
 export * from './field';
 
-import text from './text';
+import { TextField } from './text';
+import { RelationField } from './relation';
 
-export const fields = [text]
+export const fields = [
+  new TextField(),
+  // new RelationField(),
+]

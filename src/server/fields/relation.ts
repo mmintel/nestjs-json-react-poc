@@ -3,7 +3,7 @@ import { Field, FieldDefinition, FieldDefinitionSchema } from './field';
 import { AnyJson } from '../modules/json';
 import Joi from '@hapi/joi';
 
-interface TextFieldDefinition extends FieldDefinition {
+interface RelationFieldDefinition extends FieldDefinition {
   min?: number,
   max?: number,
   trim?: boolean,
@@ -11,13 +11,13 @@ interface TextFieldDefinition extends FieldDefinition {
   uppercase?: boolean,
 }
 
-class TextFieldDefinitionError extends Error {}
-class TextFieldInitializationError extends Error {}
-class TextFieldValidationError extends Error {}
+class RelationFieldDefinitionError extends Error {}
+class RelationFieldInitializationError extends Error {}
+class RelationFieldValidationError extends Error {}
 
-export class TextField implements Field {
-  private logger = new Logger('TextField');
-  public type = 'text';
+export class RelationField implements Field {
+  private logger = new Logger('RelationField');
+  public type = 'relation';
   private schema: Joi.Schema | null = null;
   private readonly definitionSchema = new FieldDefinitionSchema({
     min: Joi.number().integer().min(0),
@@ -39,25 +39,25 @@ export class TextField implements Field {
     this.logger.verbose(`Resolving value: ${JSON.stringify(value)} ...`)
 
     if (!this.schema) {
-      throw new TextFieldInitializationError('TextField must be initialized!')
+      throw new RelationFieldInitializationError('RelationField must be initialized!')
     }
 
     try {
       return this.schema.validateAsync(value);
     } catch(e) {
-      throw new TextFieldValidationError(e.message);
+      throw new RelationFieldValidationError(e.message);
     }
   }
 
-  private isValidDefinition(definition: FieldDefinition): definition is TextFieldDefinition {
+  private isValidDefinition(definition: FieldDefinition): definition is RelationFieldDefinition {
     const { error } = this.definitionSchema.validate(definition);
     if (error) {
-      throw new TextFieldDefinitionError(error.message);
+      throw new RelationFieldDefinitionError(error.message);
     }
     return true;
   }
 
-  private buildFieldSchema(definition: TextFieldDefinition): Joi.Schema {
+  private buildFieldSchema(definition: RelationFieldDefinition): Joi.Schema {
     let schema = Joi.string();
 
     if (definition.required) {
