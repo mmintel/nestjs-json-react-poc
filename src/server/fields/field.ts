@@ -20,30 +20,42 @@ interface FieldServices extends Services {
   pageService: PageService
 }
 
+export type FieldSchema = Joi.Schema;
+
+export interface FieldDefinition {
+  [key: string]: any,
+  type: string
+}
+
 export interface ResolveFieldContext {
   value: AnyJson,
   services: FieldServices,
   schema: FieldSchema,
 }
 
+export interface FieldConstructor {
+  new(services: Services, definition: FieldDefinition): Field<any>,
+}
+
 export abstract class Field<D extends FieldDefinition> {
   public abstract type: string;
 
-  private definition: FieldDefinition | null = null;
   private name = this.constructor.name;
 
   protected logger = new Logger(this.name);
   protected schema: Joi.Schema | null = null;
-  protected services: Services = {};
-  protected abstract readonly definitionSchema: Joi.Schema;
+  protected abstract getFieldDefinitionSchema(): FieldDefinitionSchema;
   protected abstract resolveField(context: ResolveFieldContext): Promise<AnyJson> | AnyJson;
   protected abstract buildFieldSchema(definition: FieldDefinition): Joi.Schema;
 
-  public init(services: Services, definition: FieldDefinition): void {
+  constructor(protected services: Services, private definition: FieldDefinition) {
+    this.init(services, definition);
+  }
+
+  private init(services: Services, definition: FieldDefinition): void {
     this.logger.verbose(`Initializing with ${JSON.stringify(definition)} ...`)
 
     this.services.pageService = services.pageService;
-    this.definition = definition;
 
     if (this.isValidDefinition(definition)) {
       this.schema = this.buildFieldSchema(definition);
@@ -73,19 +85,13 @@ export abstract class Field<D extends FieldDefinition> {
   }
 
   private isValidDefinition(definition: FieldDefinition): definition is D {
-    const { error } = this.definitionSchema.validate(definition);
+    const { error } = this.getFieldDefinitionSchema().schema.validate(definition);
+
     if (error) {
       throw new FieldDefinitionError(error.message);
     }
     return true;
   }
-}
-
-export type FieldSchema = Joi.Schema;
-
-export interface FieldDefinition {
-  [key: string]: any,
-  type: string
 }
 
 export class FieldDefinitionSchema {

@@ -16,15 +16,18 @@ class TextFieldValidationError extends Error {
 
 export class TextField extends Field<TextFieldDefinition> {
   public type = 'text';
-  protected readonly definitionSchema = new FieldDefinitionSchema({
-    min: Joi.number().integer().min(0),
-    max: Joi.number().integer().min(1),
-    trim: Joi.boolean(),
-    truncate: Joi.boolean(),
-    uppercase: Joi.boolean(),
-  }).schema;
 
-  public async resolveField({ value, schema}: ResolveFieldContext): Promise<AnyJson> {
+  protected getFieldDefinitionSchema(): FieldDefinitionSchema {
+    return new FieldDefinitionSchema({
+      min: Joi.number().integer().min(0),
+      max: Joi.number().integer().min(1),
+      trim: Joi.boolean(),
+      truncate: Joi.boolean(),
+      uppercase: Joi.boolean(),
+    })
+  };
+
+  protected async resolveField({ value, schema}: ResolveFieldContext): Promise<AnyJson> {
     try {
       return schema.validateAsync(value);
     } catch(e) {

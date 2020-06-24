@@ -9,9 +9,9 @@ import { fields } from './fields';
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const recordModelService = app.get(RecordModelService);
 
-  fields.forEach(field => {
-    recordModelService.register(field.type, field);
-  })
+  for (const [type, field] of Object.entries(fields)) {
+    recordModelService.register(type, field);
+  }
 
   await register(app);
 

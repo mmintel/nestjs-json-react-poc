@@ -1,4 +1,10 @@
 {
-  "title": "Hallo ich bin hier.",
-  "about": "/about"
+  "title": "Home",
+  "about": "/about",
+  "components": [
+    {
+      "component": "stage",
+      "title": "Hallo ich bin hier."
+    }
+  ]
 }

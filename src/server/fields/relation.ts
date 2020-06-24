@@ -9,9 +9,12 @@ class RelationFieldValidationError extends Error {
 
 export class RelationField extends Field<RelationFieldDefinition> {
   public type = 'relation';
-  protected readonly definitionSchema = new FieldDefinitionSchema({
-    multiple: Joi.boolean(),
-  }).schema;
+
+  protected getFieldDefinitionSchema(): FieldDefinitionSchema {
+    return new FieldDefinitionSchema({
+      multiple: Joi.boolean(),
+    })
+  };
 
   protected async resolveField({ value, schema, services }: ResolveFieldContext): Promise<AnyJson> {
     this.logger.verbose(`Resolving value: ${JSON.stringify(value)} ...`)

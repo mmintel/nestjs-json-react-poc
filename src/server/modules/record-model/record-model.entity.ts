@@ -5,16 +5,12 @@ import { Services } from '../record';
 import { Json } from '../json';
 import { RecordModelService } from './record-model.service';
 
-interface InitializedFieldRegistry {
+interface FieldRegistry {
   [key: string]: Field<any>,
 }
 
 export class ResolveFieldError extends Error {
   name = 'ResolveFieldError';
-}
-
-export class InitFieldError extends Error {
-  name = 'InitFieldError';
 }
 
 export class MissingFieldError extends Error {
@@ -27,7 +23,7 @@ export class InvalidFieldDefinitionError extends Error {
 
 export class RecordModel {
   private logger = new Logger('RecordModel');
-  private fields: InitializedFieldRegistry = {};
+  private fields: FieldRegistry = {};
 
   constructor(
     private recordModelService: RecordModelService,
@@ -41,18 +37,13 @@ export class RecordModel {
 
     await this.walkBlueprint(async (key, definition) => {
       const type = definition.type;
-      const field = this.recordModelService.findByType(type);
-      const fieldName = field.constructor.name;
+      const FieldConstructor = this.recordModelService.findByType(type);
 
-      if (!field) {
+      if (!FieldConstructor) {
         throw new MissingFieldError(`Could not find field for type "${type}".`);
       }
 
-      try {
-        field.init(this.services, definition);
-      } catch(e) {
-        throw new InitFieldError(`Error initializing "${fieldName}" with "${JSON.stringify(definition)}": ${e.message}.`)
-      }
+      const field = new FieldConstructor(this.services, definition);
 
       this.fields[key] = field;
     });

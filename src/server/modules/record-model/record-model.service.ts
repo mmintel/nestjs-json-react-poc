@@ -2,23 +2,23 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Blueprint } from '../blueprint';
 import { Services } from '../record';
 import { RecordModel } from './record-model.entity';
-import { Field } from '../../fields';
+import { FieldConstructor } from '../../fields';
 
-interface FieldRegistry {
-  [key: string]: Field<any>,
+interface FieldConstructorRegistry {
+  [key: string]: FieldConstructor,
 }
 
 @Injectable()
 export class RecordModelService {
   private logger = new Logger('RecordModelService');
-  private fields: FieldRegistry = {}
+  private fields: FieldConstructorRegistry = {}
 
-  public register(type: string, field: Field<any>): void {
+  public register(type: string, field: FieldConstructor): void {
     this.fields[type] = field;
     this.logger.verbose(`Registered field "${type}"!`)
   }
 
-  public findByType(type: string): Field<any> {
+  public findByType(type: string): FieldConstructor {
     return this.fields[type];
   }
 
