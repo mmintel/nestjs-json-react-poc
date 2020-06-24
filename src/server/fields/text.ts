@@ -1,5 +1,4 @@
-import { Logger } from '@nestjs/common';
-import { Field, FieldDefinition, FieldDefinitionSchema } from './field';
+import { Field, FieldDefinition, FieldDefinitionSchema, FieldSchema } from './field';
 import { AnyJson } from '../modules/json';
 import Joi from '@hapi/joi';
 
@@ -11,15 +10,11 @@ interface TextFieldDefinition extends FieldDefinition {
   uppercase?: boolean,
 }
 
-class TextFieldDefinitionError extends Error {}
-class TextFieldInitializationError extends Error {}
 class TextFieldValidationError extends Error {}
 
-export class TextField implements Field {
-  private logger = new Logger('TextField');
+export class TextField extends Field<TextFieldDefinition> {
   public type = 'text';
-  private schema: Joi.Schema | null = null;
-  private readonly definitionSchema = new FieldDefinitionSchema({
+  protected readonly definitionSchema = new FieldDefinitionSchema({
     min: Joi.number().integer().min(0),
     max: Joi.number().integer().min(1),
     trim: Joi.boolean(),
@@ -27,37 +22,15 @@ export class TextField implements Field {
     uppercase: Joi.boolean(),
   }).schema;
 
-  public init(definition: FieldDefinition): void {
-    this.logger.verbose(`Initializing with ${JSON.stringify(definition)} ...`)
-
-    if (this.isValidDefinition(definition)) {
-      this.schema = this.buildFieldSchema(definition);
-    }
-  }
-
-  public async resolve(value: AnyJson): Promise<AnyJson> {
-    this.logger.verbose(`Resolving value: ${JSON.stringify(value)} ...`)
-
-    if (!this.schema) {
-      throw new TextFieldInitializationError('TextField must be initialized!')
-    }
-
+  public async resolveField(value: AnyJson, schema: FieldSchema): Promise<AnyJson> {
     try {
-      return this.schema.validateAsync(value);
+      return schema.validateAsync(value);
     } catch(e) {
       throw new TextFieldValidationError(e.message);
     }
   }
 
-  private isValidDefinition(definition: FieldDefinition): definition is TextFieldDefinition {
-    const { error } = this.definitionSchema.validate(definition);
-    if (error) {
-      throw new TextFieldDefinitionError(error.message);
-    }
-    return true;
-  }
-
-  private buildFieldSchema(definition: TextFieldDefinition): Joi.Schema {
+  protected buildFieldSchema(definition: TextFieldDefinition): Joi.Schema {
     let schema = Joi.string();
 
     if (definition.required) {

@@ -5,5 +5,5 @@ import { RelationField } from './relation';
 
 export const fields = [
   new TextField(),
-  // new RelationField(),
+  new RelationField(),
 ]

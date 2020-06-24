@@ -5,7 +5,7 @@ import { Record } from '../record';
 import { RecordModelService } from './record-model.service';
 
 interface InitializedFieldRegistry {
-  [key: string]: Field,
+  [key: string]: Field<any>,
 }
 
 export class ResolveFieldError extends Error {}

@@ -1,63 +1,25 @@
-import { Logger } from '@nestjs/common';
-import { Field, FieldDefinition, FieldDefinitionSchema } from './field';
+import { Field, FieldDefinition, FieldSchema, FieldDefinitionSchema } from './field';
 import { AnyJson } from '../modules/json';
 import Joi from '@hapi/joi';
 
-interface RelationFieldDefinition extends FieldDefinition {
-  min?: number,
-  max?: number,
-  trim?: boolean,
-  truncate?: boolean,
-  uppercase?: boolean,
-}
-
-class RelationFieldDefinitionError extends Error {}
-class RelationFieldInitializationError extends Error {}
+type RelationFieldDefinition = FieldDefinition
 class RelationFieldValidationError extends Error {}
 
-export class RelationField implements Field {
-  private logger = new Logger('RelationField');
+export class RelationField extends Field<RelationFieldDefinition> {
   public type = 'relation';
-  private schema: Joi.Schema | null = null;
-  private readonly definitionSchema = new FieldDefinitionSchema({
-    min: Joi.number().integer().min(0),
-    max: Joi.number().integer().min(1),
-    trim: Joi.boolean(),
-    truncate: Joi.boolean(),
-    uppercase: Joi.boolean(),
-  }).schema;
+  protected readonly definitionSchema = new FieldDefinitionSchema().schema;
 
-  public init(definition: FieldDefinition): void {
-    this.logger.verbose(`Initializing with ${JSON.stringify(definition)} ...`)
-
-    if (this.isValidDefinition(definition)) {
-      this.schema = this.buildFieldSchema(definition);
-    }
-  }
-
-  public async resolve(value: AnyJson): Promise<AnyJson> {
+  protected async resolveField(value: AnyJson, schema: FieldSchema): Promise<AnyJson> {
     this.logger.verbose(`Resolving value: ${JSON.stringify(value)} ...`)
 
-    if (!this.schema) {
-      throw new RelationFieldInitializationError('RelationField must be initialized!')
-    }
-
     try {
-      return this.schema.validateAsync(value);
+      return schema.validateAsync(value);
     } catch(e) {
       throw new RelationFieldValidationError(e.message);
     }
   }
 
-  private isValidDefinition(definition: FieldDefinition): definition is RelationFieldDefinition {
-    const { error } = this.definitionSchema.validate(definition);
-    if (error) {
-      throw new RelationFieldDefinitionError(error.message);
-    }
-    return true;
-  }
-
-  private buildFieldSchema(definition: RelationFieldDefinition): Joi.Schema {
+  protected buildFieldSchema(definition: RelationFieldDefinition): Joi.Schema {
     let schema = Joi.string();
 
     if (definition.required) {

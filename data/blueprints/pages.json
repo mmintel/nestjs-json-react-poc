@@ -2,5 +2,8 @@
   "title": {
     "type": "text",
     "required": true
+  },
+  "about": {
+    "type": "relation"
   }
 }
