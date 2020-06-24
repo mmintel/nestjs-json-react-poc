@@ -1,49 +1,39 @@
-import { Field, FieldDefinition, FieldSchema, FieldDefinitionSchema } from './field';
+import { Field, FieldDefinition, FieldSchema, FieldDefinitionSchema, ResolveFieldContext } from './field';
 import { AnyJson } from '../modules/json';
 import Joi from '@hapi/joi';
 
 type RelationFieldDefinition = FieldDefinition
-class RelationFieldValidationError extends Error {}
+class RelationFieldValidationError extends Error {
+  name = 'RelationFieldValidationError';
+}
 
 export class RelationField extends Field<RelationFieldDefinition> {
   public type = 'relation';
-  protected readonly definitionSchema = new FieldDefinitionSchema().schema;
+  protected readonly definitionSchema = new FieldDefinitionSchema({
+    multiple: Joi.boolean(),
+  }).schema;
 
-  protected async resolveField(value: AnyJson, schema: FieldSchema): Promise<AnyJson> {
+  protected async resolveField({ value, schema, services }: ResolveFieldContext): Promise<AnyJson> {
     this.logger.verbose(`Resolving value: ${JSON.stringify(value)} ...`)
 
     try {
-      return schema.validateAsync(value);
+      const normalizedValue = await schema.validateAsync(value);
+      return services.pageService.getPage(normalizedValue);
     } catch(e) {
       throw new RelationFieldValidationError(e.message);
     }
   }
 
-  protected buildFieldSchema(definition: RelationFieldDefinition): Joi.Schema {
-    let schema = Joi.string();
+  protected buildFieldSchema(definition: RelationFieldDefinition): FieldSchema {
+    let schema: FieldSchema;
 
-    if (definition.required) {
-      schema = schema.required();
-    }
+    const relativePath = /(\/\w+)+$/;
+    const dependencyPath = Joi.string().pattern(relativePath);
 
-    if (definition.min) {
-      schema = schema.min(definition.min);
-    }
-
-    if (definition.max) {
-      schema = schema.max(definition.max);
-    }
-
-    if (definition.trim) {
-      schema = schema.trim(definition.trim);
-    }
-
-    if (definition.truncate) {
-      schema = schema.truncate(definition.truncate);
-    }
-
-    if (definition.uppercase) {
-      schema = schema.uppercase();
+    if (definition.multiple) {
+      schema = Joi.array().items(dependencyPath)
+    } else {
+      schema = dependencyPath;
     }
 
     return schema;

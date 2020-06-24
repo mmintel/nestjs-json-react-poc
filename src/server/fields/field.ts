@@ -1,26 +1,49 @@
+import { Services } from '../modules/record';
+import { PageService } from '../modules/page';
 import { Logger } from '@nestjs/common';
 import { AnyJson } from '../modules/json';
 import Joi from '@hapi/joi';
 
-// export interface Field {
-//   type: string;
-//   init: (definition: FieldDefinition) => void,
-//   resolve: (value: AnyJson) => Promise<AnyJson>|AnyJson,
-// }
-export class FieldDefinitionError extends Error {}
-export class FieldInitializationError extends Error {}
+export class FieldDefinitionError extends Error {
+  name = 'FieldDefinitionError';
+}
+
+export class FieldInitializationError extends Error {
+  name = 'FieldInitializationError';
+}
+
+export class FieldRequiredError extends Error {
+  name = 'FieldRequiredError';
+}
+
+interface FieldServices extends Services {
+  pageService: PageService
+}
+
+export interface ResolveFieldContext {
+  value: AnyJson,
+  services: FieldServices,
+  schema: FieldSchema,
+}
 
 export abstract class Field<D extends FieldDefinition> {
   public abstract type: string;
 
-  protected logger = new Logger(this.constructor.name);
+  private definition: FieldDefinition | null = null;
+  private name = this.constructor.name;
+
+  protected logger = new Logger(this.name);
   protected schema: Joi.Schema | null = null;
+  protected services: Services = {};
   protected abstract readonly definitionSchema: Joi.Schema;
-  protected abstract resolveField(value: AnyJson, schema: Joi.Schema): Promise<AnyJson> | AnyJson;
+  protected abstract resolveField(context: ResolveFieldContext): Promise<AnyJson> | AnyJson;
   protected abstract buildFieldSchema(definition: FieldDefinition): Joi.Schema;
 
-  public init(definition: FieldDefinition): void {
+  public init(services: Services, definition: FieldDefinition): void {
     this.logger.verbose(`Initializing with ${JSON.stringify(definition)} ...`)
+
+    this.services.pageService = services.pageService;
+    this.definition = definition;
 
     if (this.isValidDefinition(definition)) {
       this.schema = this.buildFieldSchema(definition);
@@ -30,11 +53,23 @@ export abstract class Field<D extends FieldDefinition> {
   public async resolve(value: AnyJson): Promise<AnyJson> {
     this.logger.verbose(`Resolving value: ${JSON.stringify(value)} ...`)
 
-    if (!this.schema) {
-      throw new FieldInitializationError(`${this.constructor.name} must be initialized!`)
+    if (!this.schema || !this.services.pageService || !this.definition) {
+      throw new FieldInitializationError(`${this.name} must be initialized!`)
     }
 
-    return this.resolveField(value, this.schema);
+    if (!value && !this.definition.required) {
+      return value;
+    } else if (!value && this.definition.required) {
+      throw new FieldRequiredError(`${this.type} is required!`)
+    }
+
+    const context: ResolveFieldContext = {
+      value,
+      schema: this.schema,
+      services: this.services as FieldServices,
+    }
+
+    return this.resolveField(context);
   }
 
   private isValidDefinition(definition: FieldDefinition): definition is D {

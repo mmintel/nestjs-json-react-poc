@@ -1,4 +1,4 @@
-import { Field, FieldDefinition, FieldDefinitionSchema, FieldSchema } from './field';
+import { Field, FieldDefinition, FieldDefinitionSchema, FieldSchema, ResolveFieldContext } from './field';
 import { AnyJson } from '../modules/json';
 import Joi from '@hapi/joi';
 
@@ -10,7 +10,9 @@ interface TextFieldDefinition extends FieldDefinition {
   uppercase?: boolean,
 }
 
-class TextFieldValidationError extends Error {}
+class TextFieldValidationError extends Error {
+  name = 'TextFieldValidationError';
+}
 
 export class TextField extends Field<TextFieldDefinition> {
   public type = 'text';
@@ -22,7 +24,7 @@ export class TextField extends Field<TextFieldDefinition> {
     uppercase: Joi.boolean(),
   }).schema;
 
-  public async resolveField(value: AnyJson, schema: FieldSchema): Promise<AnyJson> {
+  public async resolveField({ value, schema}: ResolveFieldContext): Promise<AnyJson> {
     try {
       return schema.validateAsync(value);
     } catch(e) {
@@ -30,7 +32,7 @@ export class TextField extends Field<TextFieldDefinition> {
     }
   }
 
-  protected buildFieldSchema(definition: TextFieldDefinition): Joi.Schema {
+  protected buildFieldSchema(definition: TextFieldDefinition): FieldSchema {
     let schema = Joi.string();
 
     if (definition.required) {

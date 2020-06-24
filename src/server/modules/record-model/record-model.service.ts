@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Blueprint } from '../blueprint';
-import { RecordModel } from './record-model';
+import { Services } from '../record';
+import { RecordModel } from './record-model.entity';
 import { Field } from '../../fields';
 
 interface FieldRegistry {
@@ -21,7 +22,7 @@ export class RecordModelService {
     return this.fields[type];
   }
 
-  public createRecordModel(blueprint: Blueprint): RecordModel {
-    return new RecordModel(this, blueprint)
+  public createRecordModel(services: Services, blueprint: Blueprint): RecordModel {
+    return new RecordModel(this, services, blueprint)
   }
 }

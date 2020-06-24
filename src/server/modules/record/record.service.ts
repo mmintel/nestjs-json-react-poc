@@ -2,15 +2,12 @@ import { ConfigService } from '@nestjs/config';
 import { Injectable, Logger } from '@nestjs/common';
 import { JsonService, Json } from '../json';
 import { BlueprintService } from '../blueprint';
-import { RecordModelService } from '../record-model';
 import { basename, dirname, resolve } from 'path';
+import { RecordModelService } from '../record-model';
+import { Record } from './record.entity';
 
-export type Record = Json
 export class RecordNotFoundException extends Error {
   name = 'RecordNotFoundException'
-};
-export class BuildRecordException extends Error {
-  name = 'BuildRecordException'
 };
 
 @Injectable()
@@ -24,26 +21,18 @@ export class RecordService {
     private recordModelService: RecordModelService,
     private configService: ConfigService
   ) {
-    this.contentPath = this.configService.get<string>('contentPath') || '';
+    this.contentPath = this.configService.get<string>('contentPath') || resolve(process.cwd(), 'content');
   }
 
-  public async get(path: string): Promise<Record> {
+  public async getRecord(path: string): Promise<Record> {
     const contentPath = resolve(this.contentPath, path);
 
     this.logger.verbose(`Loading record at "${path}"...`);
 
     const data = await this.loadData(contentPath);
     const blueprintName = basename(dirname(contentPath));
-    const blueprint = await this.blueprintService.get(blueprintName);
-    const recordModel = this.recordModelService.createRecordModel(blueprint);
-
-    await recordModel.init();
-
-    try {
-      return recordModel.buildRecord(data)
-    } catch (error) {
-      throw new BuildRecordException(error.message);
-    }
+    const blueprint = await this.blueprintService.getBlueprint(blueprintName);
+    return new Record(this.recordModelService, blueprint, data);
   }
 
   private async loadData(path: string): Promise<Json> {

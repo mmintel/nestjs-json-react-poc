@@ -5,7 +5,9 @@ import { resolve } from 'path';
 
 export type Blueprint = Json
 
-export class BlueprintNotFoundException extends Error {}
+export class BlueprintNotFoundException extends Error {
+  name = 'BlueprintNotFoundException';
+}
 
 @Injectable()
 export class BlueprintService {
@@ -19,7 +21,7 @@ export class BlueprintService {
     this.blueprintsPath = this.configService.get<string>('blueprintsPath') || '';
   }
 
-  public async get(path: string): Promise<Blueprint> {
+  public async getBlueprint(path: string): Promise<Blueprint> {
     const blueprintsPath = resolve(this.blueprintsPath, path);
 
     this.logger.verbose(`Loading blueprint at "${path}"...`);

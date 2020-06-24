@@ -1,17 +1,29 @@
 import { Logger } from '@nestjs/common';
 import { Field, FieldDefinition } from '../../fields/field';
 import { Blueprint } from '../blueprint';
-import { Record } from '../record';
+import { Services } from '../record';
+import { Json } from '../json';
 import { RecordModelService } from './record-model.service';
 
 interface InitializedFieldRegistry {
   [key: string]: Field<any>,
 }
 
-export class ResolveFieldError extends Error {}
-export class InitFieldError extends Error {}
-export class MissingFieldError extends Error {}
-export class InvalidFieldDefinitionError extends Error {}
+export class ResolveFieldError extends Error {
+  name = 'ResolveFieldError';
+}
+
+export class InitFieldError extends Error {
+  name = 'InitFieldError';
+}
+
+export class MissingFieldError extends Error {
+  name = 'MissingFieldError';
+}
+
+export class InvalidFieldDefinitionError extends Error {
+  name = 'InvalidFieldDefinitionError';
+}
 
 export class RecordModel {
   private logger = new Logger('RecordModel');
@@ -19,6 +31,7 @@ export class RecordModel {
 
   constructor(
     private recordModelService: RecordModelService,
+    private services: Services,
     private blueprint: Blueprint
   ) {
   }
@@ -36,7 +49,7 @@ export class RecordModel {
       }
 
       try {
-        field.init(definition);
+        field.init(this.services, definition);
       } catch(e) {
         throw new InitFieldError(`Error initializing "${fieldName}" with "${JSON.stringify(definition)}": ${e.message}.`)
       }
@@ -47,7 +60,7 @@ export class RecordModel {
     this.logger.verbose(`Registered fields: ${Object.keys(this.fields)}!`);
   }
 
-  public async buildRecord(record: Record): Promise<Record> {
+  public async build(record: Json): Promise<Json> {
     this.logger.verbose(`Building record for ${JSON.stringify(record)}...`);
     const newRecord = {...record};
 
