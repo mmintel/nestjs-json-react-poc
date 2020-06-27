@@ -1,20 +1,15 @@
 import React from 'react';
-import { Head } from '@react-ssr/nestjs-express';
+import { Layout } from './layout';
 
 interface PageProps {
   title: string;
 }
 
-const Page = ({ title }: PageProps) => {
+export const Page = ({ title }: PageProps) => {
   return (
-    <React.Fragment>
-      <Head>
-        <title>An example of @react-ssr/nestjs-express</title>
-      </Head>
+    <Layout>
       <p>{title}</p>
       <a href="/about">Go to the about page</a>
-    </React.Fragment>
+    </Layout>
   );
 };
-
-export default Page;
